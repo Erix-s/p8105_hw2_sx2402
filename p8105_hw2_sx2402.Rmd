@@ -11,8 +11,8 @@ library(tidyverse)
 ```
 
 ## Problem 1
-Data cleaning from csv files
-```{r Problem 1,message = FALSE}
+Data cleaning from csv files `snp` and `pol_month`, tidy and transpose the `unemployment` file
+```{r Problem 1 data cleaning,message = FALSE}
 pol_month = read_csv("./Data/pols-month.csv") |> 
   janitor::clean_names() |> 
   separate(mon,sep = "-",into = c("year","month","day")) |> 
@@ -41,4 +41,12 @@ snp = read_csv("./Data/snp.csv") |>
   select(year,month,everything()) |> 
   arrange((year),(month_num))|> 
   select(-day,-month_num)
+
+unemployment = read_csv("./Data/unemployment.csv") |> 
+  pivot_longer(Jan:Dec,values_to = "unemployment_rate",names_to = "month" ) |> 
+  rename(
+    year = Year
+  )
 ```
+
+
