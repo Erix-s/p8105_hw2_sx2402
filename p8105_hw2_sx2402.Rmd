@@ -63,11 +63,8 @@ unemployment = read_csv("./Data/unemployment.csv") |>
 
 merge data with the same year and month variable:
 ```{r data merge, message = FALSE}
-anti_join(snp,pol_month, by = c("year","month"))
-anti_join(pol_month,snp, by = c("year","month"))
-anti_join(unemployment,pol_month, by = c("year","month"))
-joint = left_join(pol_month,snp, by = c("year","month")) |> 
-  left_join(unemployment, by = c("year","month"))
+joint = full_join(pol_month,snp, by = c("year","month")) |> 
+  full_join(unemployment, by = c("year","month"))
 ```
 
 __Descriptive data of `joint`:__
@@ -106,5 +103,43 @@ joint |>
     )
 ```
 
-The dataset `joint` combines information from `pols-month`, `snp`, and `unemployment`. The original files tracked the partisan composition of U.S. politics from `r range(pol_month$year)[1]` to `r range(pol_month$year)[2]`, along with an indicator for the sitting president. The `snp` file contained monthly closing values of the S&P 500 stock index from `r range(snp$year)[1]` to `r range(snp$year)[2]`, the mean value is `r mean(as.numeric(joint$close), na.rm = TRUE)`, with a standard deviation of `r sd(joint$close, na.rm = TRUE)`. while the unemployment file provided national unemployment rates is `r range(unemployment$year)[1]` to `r range(unemployment$year)[2]` by month. After cleaning and aligning by year and month, the merged dataset `joint` has `r dim(joint)[1]` rows and `r dim(joint)[2]` columns, covering the period `r range(joint$year)[1]` to `r range(joint$year)[2]`. On average, unemployment was `r mean(joint$unemployment_rate, na.rm = TRUE)`%, S&P closing values ranged within `r range(joint$close, na.rm = TRUE)[1]` and `r range(joint$close, na.rm = TRUE)[2]`. The overall paragraph shows an increasing trend of unemployment rate and S&P closing value. The colored president political party demonstrated a fluctuation of closing value after 2000 and spiking of unemployment rate after 1980 when president is GOP. This data only shows association by time and president political party, and the association is not examined by other covariates. 
+The dataset `joint` combines information from `pols-month`, `snp`, and `unemployment`. The original files tracked the partisan composition of U.S. politics from `r range(pol_month$year)[1]` to `r range(pol_month$year)[2]`, along with an indicator for the sitting president. The `snp` file contained monthly closing values of the S&P 500 stock index from `r range(snp$year)[1]` to `r range(snp$year)[2]`, the mean value is `r mean(as.numeric(joint$close), na.rm = TRUE)`, with a standard deviation of `r sd(joint$close, na.rm = TRUE)`. while the unemployment file provided national unemployment rates is `r range(unemployment$year)[1]` to `r range(unemployment$year)[2]` by month. After cleaning and aligning by year and month, the merged dataset `joint` has `r dim(joint)[1]` rows and `r dim(joint)[2]` columns, covering the period `r range(joint$year)[1]` to `r range(joint$year)[2]`. On average, unemployment was `r mean(joint$unemployment_rate, na.rm = TRUE)`%, S&P closing values ranged within `r range(joint$close, na.rm = TRUE)[1]` and `r range(joint$close, na.rm = TRUE)[2]`. The overall diagram shows an increasing trend of unemployment rate and S&P closing value. The colored president political party demonstrated a fluctuation of closing value after 2000 and spiking of unemployment rate after 1980 when president is GOP. This data only shows association by time and president political party, and the association is not examined by other covariates. 
 
+## Problem 2
+```{r}
+mr_trash_wheel = readxl::read_excel("./Data/202409 Trash Wheel Collection Data.xlsx",sheet = "Mr. Trash Wheel", range = "A2:N653")|>
+  janitor::clean_names() |> 
+  filter(!is.na(dumpster)) |> 
+  mutate(
+    sports_balls = as.integer(round(sports_balls)),
+    trash_wheel = "Mr",
+    year = as.integer(year)
+    )
+
+prof_trash_wheel = readxl::read_excel("./Data/202409 Trash Wheel Collection Data.xlsx",sheet = "Professor Trash Wheel", range = "A2:M120")|>
+  janitor::clean_names() |> 
+  filter(!is.na(dumpster)) |>
+  mutate(
+    trash_wheel = "Professor",
+    year = as.integer(year)
+    )
+
+gwyn_trash_wheel =  readxl::read_excel("./Data/202409 Trash Wheel Collection Data.xlsx",sheet = "Gwynnda Trash Wheel", range = "A2:L265")|>
+  janitor::clean_names() |> 
+  filter(!is.na(dumpster)) |>
+  mutate(
+    trash_wheel = "Gwynnda",
+    year = as.integer(year)
+    )
+
+
+all_wheel = bind_rows(mr_trash_wheel,prof_trash_wheel,gwyn_trash_wheel)
+
+skimr::skim(all_wheel)
+
+
+  
+```
+The combined Trash Wheel dataset contains `r nrow(all_wheel)` dumpster-level observations across Mr., Professor, and Gwynnda Trash Wheels. Variables include `r names(all_wheel)`, and item-specific counts such as `cigarette_butts`, `plastic_bottles`, and `sports_balls`. The variable `weight_tons` measures the amount of trash collected per dumpster, while `sports_balls` counts the number of balls collected at time, rounded to the nearest integer. Professor Trash Wheel has collected a total of `r sum(prof_trash_wheel$weight_tons, na.rm = TRUE)` tons of trash, while Gwynnda collected `r as.integer(sum(filter(gwyn_trash_wheel,year == 2022, month == "June")$cigarette_butts, na.rm = TRUE))` cigarette butts in June 2022.
+
+## Problem 3
