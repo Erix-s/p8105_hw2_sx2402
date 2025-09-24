@@ -143,3 +143,28 @@ skimr::skim(all_wheel)
 The combined Trash Wheel dataset contains `r nrow(all_wheel)` dumpster-level observations across Mr., Professor, and Gwynnda Trash Wheels. Variables include `r names(all_wheel)`, and item-specific counts such as `cigarette_butts`, `plastic_bottles`, and `sports_balls`. The variable `weight_tons` measures the amount of trash collected per dumpster, while `sports_balls` counts the number of balls collected at time, rounded to the nearest integer. Professor Trash Wheel has collected a total of `r sum(prof_trash_wheel$weight_tons, na.rm = TRUE)` tons of trash, while Gwynnda collected `r as.integer(sum(filter(gwyn_trash_wheel,year == 2022, month == "June")$cigarette_butts, na.rm = TRUE))` cigarette butts in June 2022.
 
 ## Problem 3
+```{r problem3}
+zip_code = read_csv("./Data/Zip Codes.csv") |> 
+  janitor::clean_names() |> 
+  select(zip_code,everything(),-file_date)
+
+zori = read.csv("./Data/Zip_zori_uc_sfrcondomfr_sm_month_NYC.csv") |> 
+  janitor::clean_names() |> 
+  filter(region_type == "zip")|> 
+  rename(
+    zip_code = region_name,
+         ) |> 
+  select(zip_code,everything(),-region_type,-metro,-county_name,-city,-state,-state_name,-region_id)
+
+zori_long = zori |> 
+  pivot_longer(x2015_01_31:x2024_08_31,
+               names_to = "date",
+               values_to = "zori",
+               names_prefix = "x",
+               )
+
+zori_zip = inner_join(zori_long,zip_code,by="zip_code",relationship = "many-to-many")
+
+(unique(zori_zip$zip_code))
+```
+
