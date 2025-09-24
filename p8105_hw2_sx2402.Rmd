@@ -15,38 +15,96 @@ Data cleaning from csv files `snp` and `pol_month`, tidy and transpose the `unem
 ```{r Problem 1 data cleaning,message = FALSE}
 pol_month = read_csv("./Data/pols-month.csv") |> 
   janitor::clean_names() |> 
-  separate(mon,sep = "-",into = c("year","month","day")) |> 
+  separate(mon,sep = "-",
+           into = c("year","month","day")) |> 
   mutate(
     year = as.integer(year),
     day = as.integer(day),
     month = as.integer(month),
-    month = month.name[month],
-    president = case_when(prez_gop == 1 ~ "gop",
-                          prez_dem == 1 ~ "dem")
+    month = month.abb[month],
+    president = case_when(prez_gop != 0 ~ "gop",
+                          prez_dem != 0 ~ "dem")
     ) |> 
-  select(-prez_gop, -prez_dem, -day)
-
+  select(-prez_gop, 
+         -prez_dem, 
+         -day
+         )
 snp = read_csv("./Data/snp.csv") |> 
   janitor::clean_names() |> 
-  separate(date,sep = "/",into = c("month","day","year")) |> 
+  separate(date,
+           sep = "/",
+           into = c("month","day","year")) |> 
   mutate(
     year = as.integer(year),
     day = as.integer(day),
     month_num = as.integer(month),
-    month = month.name[month_num],
+    month = month.abb[month_num],
     year = case_when(
       year < 50 ~ 2000L + year,
       year >= 50 ~ 1900L + year
-    )) |> 
+      )
+    ) |> 
   select(year,month,everything()) |> 
-  arrange((year),(month_num))|> 
-  select(-day,-month_num)
+  arrange(year,month_num)|> 
+  select(-day,
+         -month_num
+         )
 
 unemployment = read_csv("./Data/unemployment.csv") |> 
-  pivot_longer(Jan:Dec,values_to = "unemployment_rate",names_to = "month" ) |> 
+  pivot_longer(
+    Jan:Dec,
+    values_to = "unemployment_rate",
+    names_to = "month" 
+    ) |> 
   rename(
     year = Year
   )
 ```
 
+merge data with the same year and month variable:
+```{r data merge, message = FALSE}
+anti_join(snp,pol_month, by = c("year","month"))
+anti_join(pol_month,snp, by = c("year","month"))
+anti_join(unemployment,pol_month, by = c("year","month"))
+joint = left_join(pol_month,snp, by = c("year","month")) |> 
+  left_join(unemployment, by = c("year","month"))
+```
+
+__Descriptive data of `joint`:__
+```{r plot and descriptive data}
+skimr::skim(joint)
+names(joint)
+
+joint |> 
+  ggplot(aes(x = year, y = unemployment_rate, color = president)) +
+  geom_point(na.rm = TRUE) +
+  labs(
+    title = "Average Monthly Unemployment Rate Over Time",
+    y = "Unemployment Rate (%)",
+    x = "Year"
+  ) +
+  scale_x_continuous(n.breaks = 10)+
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 18),
+    axis.title = element_text(size = 14, ),
+    axis.text = element_text(size = 12)
+    )
+
+joint |> 
+  ggplot(aes(x = year, y = close, color = president)) +
+  geom_point(na.rm = TRUE) +
+  labs(
+    title = "S&P Closing Value over Time",
+    x = "Year",
+    y = "closing Values S&P"
+  ) +  
+  scale_x_continuous(n.breaks = 10)+
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 18),
+    axis.title = element_text(size = 14, ),
+    axis.text = element_text(size = 12)
+    )
+```
+
+The dataset `joint` combines information from `pols-month`, `snp`, and `unemployment`. The original files tracked the partisan composition of U.S. politics from `r range(pol_month$year)[1]` to `r range(pol_month$year)[2]`, along with an indicator for the sitting president. The `snp` file contained monthly closing values of the S&P 500 stock index from `r range(snp$year)[1]` to `r range(snp$year)[2]`, the mean value is `r mean(as.numeric(joint$close), na.rm = TRUE)`, with a standard deviation of `r sd(joint$close, na.rm = TRUE)`. while the unemployment file provided national unemployment rates is `r range(unemployment$year)[1]` to `r range(unemployment$year)[2]` by month. After cleaning and aligning by year and month, the merged dataset `joint` has `r dim(joint)[1]` rows and `r dim(joint)[2]` columns, covering the period `r range(joint$year)[1]` to `r range(joint$year)[2]`. On average, unemployment was `r mean(joint$unemployment_rate, na.rm = TRUE)`%, S&P closing values ranged within `r range(joint$close, na.rm = TRUE)[1]` and `r range(joint$close, na.rm = TRUE)[2]`. The overall paragraph shows an increasing trend of unemployment rate and S&P closing value. The colored president political party demonstrated a fluctuation of closing value after 2000 and spiking of unemployment rate after 1980 when president is GOP. This data only shows association by time and president political party, and the association is not examined by other covariates. 
 
