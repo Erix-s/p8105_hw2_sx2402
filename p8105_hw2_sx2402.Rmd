@@ -146,15 +146,16 @@ The combined Trash Wheel dataset contains `r nrow(all_wheel)` dumpster-level obs
 ```{r problem3}
 zip_code = read_csv("./Data/Zip Codes.csv") |> 
   janitor::clean_names() |> 
-  select(zip_code,everything(),-file_date)
+  select(zip_code,everything(),-file_date,-county_code,-county_fips,-state_fips)
 
 zori = read.csv("./Data/Zip_zori_uc_sfrcondomfr_sm_month_NYC.csv") |> 
   janitor::clean_names() |> 
   filter(region_type == "zip")|> 
   rename(
     zip_code = region_name,
+    zori_county = county_name
          ) |> 
-  select(zip_code,everything(),-region_type,-metro,-county_name,-city,-state,-state_name,-region_id)
+  select(zip_code,everything(),-region_type,-metro,-city,-state,-state_name,-region_id)
 
 zori_long = zori |> 
   pivot_longer(x2015_01_31:x2024_08_31,
@@ -171,25 +172,31 @@ skimr::skim(zori_zip)
 dim(zori_zip)
 unique(zori_zip$zip_code)
 ```
-There are `r dim(zori_zip)[1]` observations with different date and rent index.
+There are `r dim(zori_zip)[1]` observations as a long form of different date and rent index corresponding to neighborhood and zip code.
 The data set included total of `r length(unique(zori_zip$zip_code))` zip codes as separate regions.
 
 ```{r descriptive data ZORI}
 setdiff(zip_code$zip_code, zori$zip_code)
+setdiff(zip_code$county, zori$zori_county)
 ```
-The zip codes are not included in ZORI data with some possible situations that
 
-* few or no rental listings in Zillow’s database
+The zip codes above are not included in ZORI data with some possible situations that:
+
+* few or no rental listings in database
 * the region is commercial or non-residential
 * privacy or insufficient sampling leads to not recorded region
 
 ```{r COVID data}
-zori_compare <- zori_zip %>%
-  filter(date %in% c("2020_01_31", "2021_01_31")) %>%
-  pivot_wider(names_from = date, values_from = zori, names_prefix = "zori_") %>%
-  mutate(price_drop = zori_2020_01_31 - zori_2021_01_31) %>%
-  arrange(desc(price_drop)) %>%
-  slice(1:10) %>%
-  select(zip_code, county, neighborhood, zori_2020_01_31, zori_2021_01_31, price_drop)
+zori_compare <- zori_zip  |> 
+  filter(date %in% c("2020_01_31", "2021_01_31"))  |> 
+  pivot_wider(names_from = date, values_from = zori)  |> 
+  mutate(price_change = `2020_01_31` - `2021_01_31`)  |> 
+  arrange(desc(price_change)) |> 
+  slice(1:10) |> 
+  select(zip_code, county,zori_county, neighborhood, `2020_01_31`, `2021_01_31`, price_change,neighborhood, county,)
+
+knitr::kable(zori_compare)
 ```
+The dataset `zori_compare` above demonstrates the 10 zip codes that have the greatest rental index drop during with the data recorded on date `2020_01_31` and `2021_01_31`. 
+Lower Manhattan seems to have multiple neighborhoods on the list with a larger area of price dropping.The 10 areas are all in New York county with high concentrations of rental options. The price dropping is probably due to remote working and high living cost. 
 
