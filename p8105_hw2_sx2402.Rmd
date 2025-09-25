@@ -164,7 +164,32 @@ zori_long = zori |>
                )
 
 zori_zip = inner_join(zori_long,zip_code,by="zip_code",relationship = "many-to-many")
+```
 
-(unique(zori_zip$zip_code))
+```{r descriptive data}
+skimr::skim(zori_zip)
+dim(zori_zip)
+unique(zori_zip$zip_code)
+```
+There are `r dim(zori_zip)[1]` observations with different date and rent index.
+The data set included total of `r length(unique(zori_zip$zip_code))` zip codes as separate regions.
+
+```{r descriptive data ZORI}
+setdiff(zip_code$zip_code, zori$zip_code)
+```
+The zip codes are not included in ZORI data with some possible situations that
+
+* few or no rental listings in Zillow’s database
+* the region is commercial or non-residential
+* privacy or insufficient sampling leads to not recorded region
+
+```{r COVID data}
+zori_compare <- zori_zip %>%
+  filter(date %in% c("2020_01_31", "2021_01_31")) %>%
+  pivot_wider(names_from = date, values_from = zori, names_prefix = "zori_") %>%
+  mutate(price_drop = zori_2020_01_31 - zori_2021_01_31) %>%
+  arrange(desc(price_drop)) %>%
+  slice(1:10) %>%
+  select(zip_code, county, neighborhood, zori_2020_01_31, zori_2021_01_31, price_drop)
 ```
 
