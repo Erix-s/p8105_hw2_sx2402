@@ -107,7 +107,7 @@ The dataset `joint` combines information from `pols-month`, `snp`, and `unemploy
 
 ## Problem 2
 ```{r problem 2}
-mr_trash_wheel = readxl::read_excel("./Data/202409 Trash Wheel Collection Data.xlsx",sheet = "Mr. Trash Wheel", range = "A2:N653")|>
+mr_trash_wheel = readxl::read_excel("./Data/202509 Trash Wheel Collection Data.xlsx",sheet = "Mr. Trash Wheel", range = "A2:N653")|>
   janitor::clean_names() |> 
   filter(!is.na(dumpster)) |> 
   mutate(
@@ -116,7 +116,7 @@ mr_trash_wheel = readxl::read_excel("./Data/202409 Trash Wheel Collection Data.x
     year = as.integer(year)
     )
 
-prof_trash_wheel = readxl::read_excel("./Data/202409 Trash Wheel Collection Data.xlsx",sheet = "Professor Trash Wheel", range = "A2:M120")|>
+prof_trash_wheel = readxl::read_excel("./Data/202509 Trash Wheel Collection Data.xlsx",sheet = "Professor Trash Wheel", range = "A2:M120")|>
   janitor::clean_names() |> 
   filter(!is.na(dumpster)) |>
   mutate(
@@ -124,7 +124,7 @@ prof_trash_wheel = readxl::read_excel("./Data/202409 Trash Wheel Collection Data
     year = as.integer(year)
     )
 
-gwyn_trash_wheel =  readxl::read_excel("./Data/202409 Trash Wheel Collection Data.xlsx",sheet = "Gwynnda Trash Wheel", range = "A2:L265")|>
+gwyn_trash_wheel =  readxl::read_excel("./Data/202509 Trash Wheel Collection Data.xlsx",sheet = "Gwynns Falls Trash Wheel", range = "A2:L265")|>
   janitor::clean_names() |> 
   filter(!is.na(dumpster)) |>
   mutate(
